@@ -8,14 +8,15 @@ __author__ = 'Ajay Roopakalu (https://github.com/jrupac/tasky)'
 
 import codecs
 import datetime as dt
-import gflags
-import httplib2
 import os
 import shlex
 import sys
 import time
-from apiclient.discovery import build
 from collections import OrderedDict
+
+import gflags
+import httplib2
+from apiclient.discovery import build
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.file import Storage
 from oauth2client.tools import run_flow as run
@@ -282,6 +283,31 @@ class Tasky(object):
                 # Set everything to be initially unmodified
                 task['modified'] = Tasky.UNCHANGED
                 self.taskLists[tasklist['id']][task['id']] = task
+
+            task_list_items = self.taskLists[tasklist['id']].items()
+
+            for task_list_item in task_list_items:
+                if 'parent' in task_list_item[1]:
+                    parent_id = task_list_item[1]['parent']
+                    pos = task_list_item[1]['position'].encode("utf-8").lstrip("0")
+                    if not pos:
+                        pos = 0
+                    for parent_item in task_list_items:
+                        if parent_id == parent_item[1]['id']:
+                            # print(parent_item[1]['sortPosition'])
+                            parent_pos = parent_item[1]['position']
+                            if not parent_pos:
+                                parent_pos = 0
+                            pos = int(parent_pos) + int(pos)
+                    task_list_item[1]['sortPosition'] = pos
+                else:
+                    top_level_pos = task_list_item[1]['position'].encode("utf-8").lstrip("0")
+                    if not top_level_pos:
+                        top_level_pos = 0
+                    task_list_item[1]['sortPosition'] = int(top_level_pos)
+
+            self.taskLists[tasklist['id']] = OrderedDict(
+                sorted(task_list_items, key=lambda t: t[1]['sortPosition']))
 
     def PutData(self):
         # Nothing to write home about
