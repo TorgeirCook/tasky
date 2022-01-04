@@ -364,16 +364,11 @@ class Tasky(object):
                 depth = depthMap[task['parent']] + 1
             depthMap[task['id']] = depth
 
-            # Print x in box if task has already been completed.
-            # if isCompleted:
-            #     print('%s%s [x] %s' % (
-            #         tab * depth, self.taskLists[taskListId].keys().index(taskId),
-            #         task['title']))
-            # else:
-            print('%s%s%s [ ] %s%s' % (
-                TextColor.TITLE, tab * depth,
-                self.taskLists[taskListId].keys().index(taskId), task['title'],
-                TextColor.CLEAR))
+            if not isCompleted:
+                print('%s%s%s [ ] %s%s' % (
+                    TextColor.TITLE, tab * depth,
+                    self.taskLists[taskListId].keys().index(taskId), task['title'],
+                    TextColor.CLEAR))
 
             if not onlySummary:
                 # Print due date if specified.
