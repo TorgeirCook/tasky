@@ -202,9 +202,13 @@ class Tasky(object):
         elif 'parent' in task:
             parent = task['parent']
 
+        if parent is not None:
+            parent = ''.join(parent)
+        if after is not None:
+            ''.join(after)
         self.service.tasks().move(
-            tasklist=tasklistIndex, task=task['id'], parent=''.join(parent),
-            previous=''.join(after), body=task).execute()
+            tasklist=tasklistIndex, task=task['id'], parent=parent,
+            previous=after).execute()
 
     def RemoveTask(self, task):
         tasklist = self.taskLists[self.taskLists.keys()[FLAGS.tasklist]]
@@ -294,7 +298,6 @@ class Tasky(object):
                         pos = 0
                     for parent_item in task_list_items:
                         if parent_id == parent_item[1]['id']:
-                            # print(parent_item[1]['sortPosition'])
                             parent_pos = parent_item[1]['position']
                             if not parent_pos:
                                 parent_pos = 0
@@ -335,8 +338,7 @@ class Tasky(object):
 
         # No task lists
         if self.taskLists == {}:
-            print
-            'Found no task lists.'
+            print('Found no task lists.')
             return
 
         # Use a dictionary to store the indent depth of each task
@@ -416,8 +418,7 @@ class Tasky(object):
                 task['notes'] = FLAGS.note
             if FLAGS['parent'].present:
                 task['parent'] = FLAGS.parent
-            print
-            'Adding task...'
+            print('Adding task...')
             self.AddTask(task)
         elif FLAGS.delete:
             readIn = raw_input(
@@ -428,8 +429,7 @@ class Tasky(object):
                 del self.taskLists[taskListId]
             self.PutData()
         elif FLAGS.new:
-            print
-            'Creating new task list...'
+            print('Creating new task list...')
             if not FLAGS.title:
                 print('WARNING: Creating task list with no title')
             newTaskList = self.service.tasklists().insert(
@@ -438,8 +438,7 @@ class Tasky(object):
             self.taskLists[newTaskList['id']] = OrderedDict()
             self.PutData()
         elif FLAGS.rename:
-            print
-            'Renaming task list...'
+            print('Renaming task list...')
             tasklist = self.service.tasklists().get(tasklist=taskListId).execute()
             tasklist['title'] = FLAGS.title
             self.idToTitle[taskListId] = FLAGS.title
@@ -447,8 +446,7 @@ class Tasky(object):
                 tasklist=taskListId, body=tasklist).execute()
             self.PutData()
         elif FLAGS.edit:
-            print
-            'Editing task...'
+            print('Editing task...')
             task = tasklist[tasklist.keys()[int(FLAGS.index[0])]]
             if FLAGS.title:
                 task['title'] = FLAGS.title
@@ -464,47 +462,40 @@ class Tasky(object):
                 return
             task['modified'] = Tasky.MODIFIED
         elif FLAGS.move:
-            print
-            'Moving task...'
+            print('Moving task...')
             task = tasklist[tasklist.keys()[int(FLAGS.index[0])]]
             self.MoveTask(task)
             self.PutData()
         elif FLAGS.clear:
             if FLAGS.force:
-                print
-                'Removing all task(s)...'
+                print('Removing all task(s)...')
                 for taskId in tasklist:
                     self.RemoveTask(tasklist[taskId])
             else:
-                print
-                'Clearing completed task(s)...'
+                print('Clearing completed task(s)...')
                 self.service.tasks().clear(tasklist=taskListId).execute()
                 for taskId in tasklist:
                     task = tasklist[taskId]
                     if task['status'] == 'completed':
                         task['modified'] = Tasky.DELETED
         elif FLAGS.remove:
-            print
-            'Removing task(s)...'
+            print('Removing task(s)...')
             for index in FLAGS.index:
                 self.RemoveTask(tasklist[tasklist.keys()[int(index)]])
         elif FLAGS.toggle:
-            print
-            'Toggling task(s)...'
+            print('Toggling task(s)...')
             for index in FLAGS.index:
                 self.ToggleTask(tasklist[tasklist.keys()[int(index)]])
         elif FLAGS.list:
             if FLAGS['tasklist'].present:
-                print
-                'Printing Task List %d...' % FLAGS.tasklist
+                print('Printing Task List %d...' % FLAGS.tasklist)
                 tasklistId = self.taskLists.keys()[FLAGS.tasklist]
                 if FLAGS.summary:
                     self.PrintAllTasks(FLAGS.tasklist, tasklistId, onlySummary=True)
                 else:
                     self.PrintAllTasks(FLAGS.tasklist, tasklistId)
             else:
-                print
-                'Printing all Task Lists...'
+                print('Printing all Task Lists...')
                 if FLAGS.summary:
                     self.PrintSummary()
                 else:
