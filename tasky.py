@@ -277,7 +277,7 @@ class Tasky(object):
                 continue
             self.idToTitle[tasklist['id']] = tasklist['title']
             self.taskLists[tasklist['id']] = OrderedDict()
-            tasks = self.service.tasks().list(tasklist=tasklist['id'], showCompleted=False, showHidden=True).execute()
+            tasks = self.service.tasks().list(tasklist=tasklist['id'], showCompleted=True, showHidden=True).execute()
             # No task in current list
             if 'items' not in tasks:
                 continue
