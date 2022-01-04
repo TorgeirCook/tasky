@@ -273,7 +273,7 @@ class Tasky(object):
                 continue
             self.idToTitle[tasklist['id']] = tasklist['title']
             self.taskLists[tasklist['id']] = OrderedDict()
-            tasks = self.service.tasks().list(tasklist=tasklist['id'], showCompleted=True, showHidden=True).execute()
+            tasks = self.service.tasks().list(tasklist=tasklist['id'], showCompleted=False, showHidden=True).execute()
             # No task in current list
             if 'items' not in tasks:
                 continue
@@ -365,15 +365,15 @@ class Tasky(object):
             depthMap[task['id']] = depth
 
             # Print x in box if task has already been completed.
-            if isCompleted:
-                print('%s%s [x] %s' % (
-                    tab * depth, self.taskLists[taskListId].keys().index(taskId),
-                    task['title']))
-            else:
-                print('%s%s%s [ ] %s%s' % (
-                    TextColor.TITLE, tab * depth,
-                    self.taskLists[taskListId].keys().index(taskId), task['title'],
-                    TextColor.CLEAR))
+            # if isCompleted:
+            #     print('%s%s [x] %s' % (
+            #         tab * depth, self.taskLists[taskListId].keys().index(taskId),
+            #         task['title']))
+            # else:
+            print('%s%s%s [ ] %s%s' % (
+                TextColor.TITLE, tab * depth,
+                self.taskLists[taskListId].keys().index(taskId), task['title'],
+                TextColor.CLEAR))
 
             if not onlySummary:
                 # Print due date if specified.
