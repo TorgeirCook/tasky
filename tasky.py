@@ -59,6 +59,10 @@ gflags.DEFINE_spaceseplist(
 gflags.DEFINE_boolean(
     'force', False, 'Forcibly perform the operation.', short_name='f')
 gflags.DEFINE_boolean(
+    'only-completed', False, 'Show only completed.', short_name='oc')
+gflags.DEFINE_boolean(
+    'show-completed-on', False, 'Show completed on date', short_name='co')
+gflags.DEFINE_boolean(
     'color', True, 'Display output with terminal colors.', short_name='o')
 gflags.DEFINE_string(
     'note', '', 'A note to attach to a task.')
@@ -277,7 +281,8 @@ class Tasky(object):
                 continue
             self.idToTitle[tasklist['id']] = tasklist['title']
             self.taskLists[tasklist['id']] = OrderedDict()
-            tasks = self.service.tasks().list(tasklist=tasklist['id'], showCompleted=True, showHidden=True).execute()
+            tasks = self.service.tasks().list(tasklist=tasklist['id'], showCompleted=True, showHidden=True,
+                                              maxResults=100).execute()
             # No task in current list
             if 'items' not in tasks:
                 continue
@@ -366,27 +371,54 @@ class Tasky(object):
                 depth = depthMap[task['parent']] + 1
             depthMap[task['id']] = depth
 
-            if not isCompleted:
-                print('%s%s%s [ ] %s%s' % (
-                    TextColor.TITLE, tab * depth,
-                    self.taskLists[taskListId].keys().index(taskId), task['title'],
-                    TextColor.CLEAR))
+            if FLAGS['only-completed'].present:
+                if isCompleted:
+                    print('%s%s [x] %s' % (
+                        tab * depth, self.taskLists[taskListId].keys().index(taskId),
+                        task['title']))
+                    if not onlySummary:
+                        if 'completed' in task:
+                            date = dt.datetime.strptime(task['completed'],
+                                                        '%Y-%m-%dT%H:%M:%S.%fZ')
+                            output = date.strftime('%a, %b %d, %Y')
+                            if FLAGS['show-completed-on'].present:
+                                print('%s%sCompleted on: %s%s' % (
+                                    tab * (depth + 1), TextColor.DATE,
+                                    output, TextColor.CLEAR))
+                        if 'due' in task:
+                            date = dt.datetime.strptime(task['due'],
+                                                        '%Y-%m-%dT%H:%M:%S.%fZ')
+                            output = date.strftime('%a, %b %d, %Y')
+                            print('%s%sDue Date: %s%s' % (
+                                tab * (depth + 1), TextColor.DATE,
+                                output, TextColor.CLEAR))
 
-            if not onlySummary:
-                # Print due date if specified.
-                if 'due' in task:
-                    date = dt.datetime.strptime(task['due'],
-                                                '%Y-%m-%dT%H:%M:%S.%fZ')
-                    output = date.strftime('%a, %b %d, %Y')
-                    print('%s%sDue Date: %s%s' % (
-                        tab * (depth + 1), TextColor.DATE,
-                        output, TextColor.CLEAR))
-
-                # Print notes if specified.
-                if 'notes' in task:
-                    print('%s%sNotes: %s%s' % (
-                        tab * (depth + 1), TextColor.NOTES, task['notes'],
+                        # Print notes if specified.
+                        if 'notes' in task:
+                            print('%s%sNotes: %s%s' % (
+                                tab * (depth + 1), TextColor.NOTES, task['notes'],
+                                TextColor.CLEAR))
+            else:
+                if not isCompleted:
+                    print('%s%s%s [ ] %s%s' % (
+                        TextColor.TITLE, tab * depth,
+                        self.taskLists[taskListId].keys().index(taskId), task['title'],
                         TextColor.CLEAR))
+                    if not onlySummary:
+                        # Print due date if specified.
+                        if 'due' in task:
+                            date = dt.datetime.strptime(task['due'],
+                                                        '%Y-%m-%dT%H:%M:%S.%fZ')
+                            output = date.strftime('%a, %b %d, %Y')
+                            print('%s%sDue Date: %s%s' % (
+                                tab * (depth + 1), TextColor.DATE,
+                                output, TextColor.CLEAR))
+
+                        # Print notes if specified.
+                        if 'notes' in task:
+                            print('%s%sNotes: %s%s' % (
+                                tab * (depth + 1), TextColor.NOTES, task['notes'],
+                                TextColor.CLEAR))
 
     def PrintSummary(self):
         for taskListId in self.taskLists:
