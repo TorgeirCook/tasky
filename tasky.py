@@ -61,7 +61,7 @@ gflags.DEFINE_boolean(
 gflags.DEFINE_boolean(
     'only-completed', False, 'Show only completed.', short_name='oc')
 gflags.DEFINE_boolean(
-    'show-completed-on', False, 'Show completed on date', short_name='co')
+    'completed-on', False, 'Show completed on date', short_name='co')
 gflags.DEFINE_boolean(
     'color', True, 'Display output with terminal colors.', short_name='o')
 gflags.DEFINE_string(
@@ -381,7 +381,7 @@ class Tasky(object):
                             date = dt.datetime.strptime(task['completed'],
                                                         '%Y-%m-%dT%H:%M:%S.%fZ')
                             output = date.strftime('%a, %b %d, %Y')
-                            if FLAGS['show-completed-on'].present:
+                            if FLAGS['completed-on'].present:
                                 print('%s%sCompleted on: %s%s' % (
                                     tab * (depth + 1), TextColor.DATE,
                                     output, TextColor.CLEAR))
