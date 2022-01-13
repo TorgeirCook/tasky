@@ -70,7 +70,7 @@ gflags.DEFINE_integer(
     'parent', 0, 'Index of parent task.', short_name='p')
 
 gflags.DEFINE_integer(
-    'tasklist', 0, 'Id of task list to operate on.')
+    'tasklist', 0, 'Id of task list to operate on.', short_name="tl")
 gflags.DEFINE_string(
     'title', '', 'The name of the task.')
 
