@@ -206,10 +206,6 @@ class Tasky(object):
         elif 'parent' in task:
             parent = task['parent']
 
-        if parent is not None:
-            parent = ''.join(parent)
-        if after is not None:
-            ''.join(after)
         self.service.tasks().move(
             tasklist=tasklistIndex, task=task['id'], parent=parent,
             previous=after).execute()
@@ -589,7 +585,8 @@ def main(args):
                     if FLAGS.summary:
                         tasky.PrintAllTasks(FLAGS.tasklist, tasklistId, onlySummary=True)
                     else:
-                        tasky.PrintAllTasks(FLAGS.tasklist, tasklistId)
+                        if not FLAGS.move:
+                            tasky.PrintAllTasks(FLAGS.tasklist, tasklistId)
                 else:
                     tasky.PrintAllTaskLists()
     else:
