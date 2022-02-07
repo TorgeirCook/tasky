@@ -10,12 +10,12 @@ import codecs
 import datetime as dt
 import os
 import shlex
-import sys
-import time
 from collections import OrderedDict
 
 import gflags
 import httplib2
+import sys
+import time
 from apiclient.discovery import build
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.file import Storage
@@ -294,6 +294,9 @@ class Tasky(object):
                 self.taskLists[tasklist['id']][task['id']] = task
 
             task_list_items = self.taskLists[tasklist['id']].items()
+            for index, task_list_item in enumerate(task_list_items):
+                if 'parent' in task_list_item[1]:
+                    task_list_items.append(task_list_items.pop(index))
 
             for task_list_item in task_list_items:
                 if 'parent' in task_list_item[1]:
