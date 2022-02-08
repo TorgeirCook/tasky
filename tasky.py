@@ -168,9 +168,9 @@ class Tasky(object):
     def AddTask(self, task):
         tasklistId = self.taskLists.keys()[FLAGS.tasklist]
         tasklist = self.taskLists[tasklistId]
-
         if 'parent' in task:
             parent = tasklist.keys()[task['parent']]
+            task['parent'] = parent
             newTask = self.service.tasks().insert(
                 tasklist=tasklistId, parent=parent, body=task).execute()
             # Re-insert the new task in order.
@@ -180,8 +180,11 @@ class Tasky(object):
                 if tt is parent:
                     newDict[newTask['id']] = newTask
         else:
+            afterTaskId = ""
+            if FLAGS["after"].present:
+                afterTaskId = tasklist.keys()[FLAGS.after]
             newTask = self.service.tasks().insert(
-                tasklist=tasklistId, body=task).execute()
+                tasklist=tasklistId, previous=afterTaskId, body=task).execute()
             newDict = OrderedDict()
             newDict[newTask['id']] = newTask
             for tt in tasklist:
