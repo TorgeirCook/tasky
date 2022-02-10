@@ -292,32 +292,20 @@ class Tasky(object):
                 task['modified'] = Tasky.UNCHANGED
                 self.taskLists[tasklist['id']][task['id']] = task
 
-            task_list_items = self.taskLists[tasklist['id']].items()
-            for index, task_list_item in enumerate(task_list_items):
-                if 'parent' in task_list_item[1]:
-                    task_list_items.append(task_list_items.pop(index))
-
-            for task_list_item in task_list_items:
-                if 'parent' in task_list_item[1]:
-                    parent_id = task_list_item[1]['parent']
-                    pos = task_list_item[1]['position'].encode("utf-8").lstrip("0")
-                    if not pos:
-                        pos = 0
-                    for parent_item in task_list_items:
-                        if parent_id == parent_item[1]['id']:
-                            parent_pos = parent_item[1]['position']
-                            if not parent_pos:
-                                parent_pos = 0
-                            pos = int(parent_pos) + int(pos)
-                    task_list_item[1]['sortPosition'] = pos
-                else:
-                    top_level_pos = task_list_item[1]['position'].encode("utf-8").lstrip("0")
-                    if not top_level_pos:
-                        top_level_pos = 0
-                    task_list_item[1]['sortPosition'] = int(top_level_pos)
-
-            self.taskLists[tasklist['id']] = OrderedDict(
-                sorted(task_list_items, key=lambda t: t[1]['sortPosition']))
+            tasks = sorted(self.taskLists[tasklist['id']].items(), key=lambda t: t[1]['position'])
+            sorted_tasks = []
+            for index, task_list_item in enumerate(tasks):
+                if 'parent' not in task_list_item[1]:
+                    parent_task_id = task_list_item[1]["id"]
+                    sorted_tasks.append(task_list_item)
+                    child_tasks = []
+                    for _index, _task_list_item in enumerate(tasks):
+                        if 'parent' in _task_list_item[1] and _task_list_item[1]["parent"] == parent_task_id:
+                            child_tasks.append(_task_list_item)
+                    child_tasks = sorted(child_tasks, key=lambda t: t[1]['position'])
+                    for child_task in child_tasks:
+                        sorted_tasks.append(child_task)
+            self.taskLists[tasklist['id']] = OrderedDict(sorted_tasks)
 
     def PutData(self):
         # Nothing to write home about
@@ -418,15 +406,52 @@ class Tasky(object):
 
                         # Print notes if specified.
                         if 'notes' in task:
-                            print('%s%sNotes: %s%s' % (
-                                tab * (depth + 1), TextColor.NOTES, task['notes'],
-                                TextColor.CLEAR))
+                            self.PrintNotes(task['notes'], tab * (depth + 1))
 
     def PrintSummary(self):
         for taskListId in self.taskLists:
             print('%s %s (%s)' % (
                 self.taskLists.keys().index(taskListId),
                 self.idToTitle[taskListId], len(self.taskLists[taskListId])))
+
+    def PrintNotes(self, notes, preamble):
+        indent_length = len(preamble) + 7
+        indent = (" " * indent_length)
+        columns, rows = self.GetTerminalSize()
+        line_length = columns - indent_length
+        note_with_line_breaks = ""
+        note_lines = []
+        for index in range(0, len(notes), line_length):
+            note_lines.append(notes[index: index + line_length])
+        for line in note_lines:
+            note_with_line_breaks = note_with_line_breaks + line.strip() + indent
+        print('%s%sNotes: %s%s' % (
+            preamble, TextColor.NOTES, note_with_line_breaks,
+            TextColor.CLEAR))
+
+    def GetTerminalSize(self):
+        env = os.environ
+
+        def ioctl_GWINSZ(fd):
+            try:
+                import fcntl, termios, struct, os
+                cr = struct.unpack('hh', fcntl.ioctl(fd, termios.TIOCGWINSZ,
+                                                     '1234'))
+            except:
+                return
+            return cr
+
+        cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
+        if not cr:
+            try:
+                fd = os.open(os.ctermid(), os.O_RDONLY)
+                cr = ioctl_GWINSZ(fd)
+                os.close(fd)
+            except:
+                pass
+        if not cr:
+            cr = (env.get('LINES', 25), env.get('COLUMNS', 80))
+        return int(cr[1]), int(cr[0])
 
     def HandleInputArgs(self):
         taskListId = self.taskLists.keys()[FLAGS.tasklist]
