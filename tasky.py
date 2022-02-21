@@ -418,15 +418,20 @@ class Tasky(object):
         indent_length = len(preamble) + 7
         indent = (" " * indent_length)
         columns, rows = self.GetTerminalSize()
-        line_length = columns - indent_length
-        note_with_line_breaks = ""
-        note_lines = []
-        for index in range(0, len(notes), line_length):
-            note_lines.append(notes[index: index + line_length])
-        for line in note_lines:
-            note_with_line_breaks = note_with_line_breaks + line.strip() + indent
+        line_length = columns - indent_length - 50
+        note_with_indent = ""
+        acc_line_length = 0
+        for i, char in enumerate(notes):
+            acc_line_length = acc_line_length + 1
+            if acc_line_length >= line_length or char == "\n":
+                if char == "\n":
+                    char = char + indent
+                else:
+                    char = char + "\n" + indent
+                acc_line_length = 0
+            note_with_indent = note_with_indent + char
         print('%s%sNotes: %s%s' % (
-            preamble, TextColor.NOTES, note_with_line_breaks,
+            preamble, TextColor.NOTES, note_with_indent + "\n",
             TextColor.CLEAR))
 
     def GetTerminalSize(self):
